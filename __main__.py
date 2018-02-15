@@ -6,8 +6,6 @@ import parameters
 instance = input_output.read_input()
 algo = flac
 
-
-
 if parameters.DEBUG:
     print('Instance lue, n = %d, m = %d, k = %d' % (len(instance.g), instance.g.nb_edges, len(instance.terms)))
 
@@ -21,6 +19,6 @@ if parameters.DEBUG:
         input_output.print_value(instance, tree)
 else:
     if tree2 is None:
-        input_output.print_output(instance, tree) # Infeasible solution
+        input_output.print_output(instance, tree)  # Infeasible solution
     else:
         input_output.print_output(instance, tree2)
