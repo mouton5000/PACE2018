@@ -1,45 +1,47 @@
 from dynamicgraphviz.graph.undirectedgraph import UndirectedGraph
 import instances
-
+import parameters
 
 def read_input():
     """Read the input and return the corresponding instance."""
     input()
     size = int(input().split()[-1])
-    input()
+    nb_edges = int(input().split()[-1])
 
+    g = UndirectedGraph()
+
+    if parameters.DEBUG:
+        print('Build nodes')
+
+    nodes = [g.add_node() for _ in range(size)]
+
+    if parameters.DEBUG:
+        print('Build edges')
     edges = []
-    while True:
+    weights = {}
+    i = 0
+    for i in range(nb_edges):
+        if parameters.DEBUG:
+            i += 1
+            if i % 1000 == 0:
+                print('Edge %d / %d' % (i, nb_edges))
         line = input()
-        if line == 'END':
-            break
         _, u, v, w = line.split()
+
+        e = g.add_edge(nodes[int(u) - 1], nodes[int(v) - 1])
+        weights[e] = int(w)
+
         edges.append((int(u), int(v), int(w)))
 
     input()
     input()
+    input()
+    nb_terms = int(input().split()[-1])
     terms = []
-    while True:
+    for i in range(nb_terms):
         line = input()
-        if line == 'END':
-            break
         _, t = line.split()
-        terms.append(int(t))
-
-    return build_instance_from(size, edges, terms)
-
-
-def build_instance_from(size, edges_int, terms_int):
-    """Build an instance from the pretreated input"""
-    g = UndirectedGraph()
-    nodes = [g.add_node() for _ in range(size)]
-    weights = {}
-
-    for u, v, w in edges_int:
-        e = g.add_edge(nodes[u - 1], nodes[v - 1])
-        weights[e] = w
-
-    terms = [nodes[x - 1] for x in terms_int]
+        terms.append(nodes[int(t) - 1])
 
     return instances.SteinerInstance(g, terms, weights)
 
