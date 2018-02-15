@@ -57,6 +57,9 @@ def compute(instance):
     # The actual "physical" time since the beginning of saturation
     time = 0
 
+    def update_next_saturated_arc(v):
+        pass
+
     def reinit():
         """Clear the maps, sets and lists used by the algorithm FLAC. Reinitialize the parameters used by FLAC."""
         saturated.clear()
@@ -75,13 +78,44 @@ def compute(instance):
             # define the next saturated arc entering v, and compute the time in seconds needed to saturate it.
             update_next_saturated_arc(v)
 
-    def update_next_saturated_arc(v):
+    def next_saturated_arc():
+        pass
+
+    def build_tree(u):
+        pass
+
+    def find_conflict(u, v):
+        pass
+
+    def saturate_arc_and_update(v):
         pass
 
     def apply_flac():
         """a tree rooted in the root of the instance spanning a part of the terminals, and the set of those
         terminals."""
-        pass
+        reinit()
+        while True:
+            # Check which arc will be the next saturated one
+            u, v = next_saturated_arc()
+            # print(a, end=' ')
+
+            # If the root is reached by the terminals, we can return a tree
+            if u in reached:
+                saturated.add((u, v))
+                return build_tree(u)
+
+            # We now check if a node is linked to the root with two paths of saturated arcs: it is called a conflict
+            conflict = find_conflict(u, v)
+            # print(conflict)
+
+            # Whatever the case, we have to check which arc of v will be its next saturated entering arc, and when
+            # it will be saturated
+            update_next_saturated_arc(v)
+
+            # If there is a conflict, we just ignore the arc saturation, as if it was never added to the arc
+            if not conflict:
+                # If there is no conflict, we have to update the flow rate of other arcs as a new arc is saturated.
+                saturate_arc_and_update(a)
 
     while len(required_vertices) != 0:
 
