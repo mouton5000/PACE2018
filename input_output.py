@@ -33,10 +33,14 @@ def read_input():
 
         edges.append((int(u), int(v), int(w)))
 
-    input()
-    input()
-    input()
-    nb_terms = int(input().split()[-1])
+    line = input()
+    while 'Terminals' not in line:
+        line = input()
+    if 'SECTION' in line:
+        line = input()
+        while 'Terminals' not in line:
+            line = input()
+    nb_terms = int(line.split()[-1])
     terms = []
     for i in range(nb_terms):
         line = input()
