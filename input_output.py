@@ -69,3 +69,24 @@ def print_output(instance, tree):
     """ Print the solution tree of the given instance."""
     print_value(instance, tree)
     print_tree(tree)
+
+
+def get_value(instance, tree):
+    if tree is not None:
+        return 'VALUE %d\n' % sum(instance.weights[e] for e in tree)
+
+
+def get_tree(tree):
+    if tree is None:
+        return str(None)
+
+    def str_e(e):
+        u, v = e.extremities
+        return '%d %d' % (u.index, v.index)
+
+    return '\n'.join(str_e(e) for e in tree)
+
+
+def get_output(instance, tree):
+    """ Return a string representing the solution"""
+    return get_value(instance, tree) + get_tree(tree)
