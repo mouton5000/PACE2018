@@ -5,12 +5,12 @@ import parameters
 import signal
 
 
-class SigtermException(Exception):
+class SignalException(Exception):
     pass
 
 
-def signal_term_handler(signal, frame):
-    raise SigtermException()
+def signal_handler(signal, frame):
+    raise SignalException()
 
 
 btree = None
@@ -24,7 +24,8 @@ def output_tree():
         input_output.print_output(instance, btree)
 
 
-signal.signal(signal.SIGTERM, signal_term_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 
 try:
@@ -46,5 +47,5 @@ try:
 
     output_tree()
 
-except SigtermException:
+except SignalException:
     output_tree()
