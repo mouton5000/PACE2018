@@ -1,5 +1,6 @@
 import dynamicgraphviz
 from collections import defaultdict
+import parameters
 
 
 class SteinerInstance:
@@ -13,6 +14,9 @@ class SteinerInstance:
 
         # Build connected components of t
         # Remove cycles
+
+        if parameters.DEBUG:
+            print('Simplify step')
 
         newcost = 0
         remcost = 0
