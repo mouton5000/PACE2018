@@ -1,6 +1,6 @@
 
 import input_output
-from algos import all, twoapprox, flac
+from algos import all, twoapprox, flac, melhorntwoapprox
 import parameters
 import signal
 
@@ -35,7 +35,7 @@ try:
     if parameters.DEBUG:
         print('Instance lue, n = %d, m = %d, k = %d' % (len(instance.g), instance.g.nb_edges, len(instance.terms)))
 
-    for algo in [twoapprox, flac]:
+    for algo in [melhorntwoapprox, flac]:
         if parameters.DEBUG:
             print(algo)
 

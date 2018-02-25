@@ -1,4 +1,5 @@
 from helpers.heap_dict import heapdict
+from collections import defaultdict
 
 
 def dijkstra(g, source, weights, destinations=None):
@@ -38,8 +39,64 @@ def all_shp_between_sources(g, sources, weights):
     paths = {}
     dests = set(sources)
     for x in sources:
+        print(x)
         dests.remove(x)
         distsx, pathsx = dijkstra(g, x, weights, destinations=dests)
         dists[x] = {y: distsx[y] for y in dests}
         paths[x] = {y: pathsx[y] for y in dests}
     return dists, paths
+
+
+def voronoi(g, sources, weights):
+    """Compute voronoi regions by parallely compute a dijkstra from each source. """
+
+    # List of nodes visited by at least one source
+    allvisited = set([])
+
+    # Closest source of each node
+    closest_sources = {}
+
+    # Heap of closest nodes of each source
+    bests = {}
+    current_bests = heapdict()
+    for x in sources:
+        h = heapdict()
+        h[x] = 0
+        bests[x] = h
+        current_bests[x] = 0
+
+    # Distance from each source to its voronoi region nodes
+    dists = defaultdict(dict)
+
+    # Shortest path from each source to its voronoi region nodes
+    paths = {}
+    for x in sources:
+        paths[x] = {x: []}
+
+    while len(allvisited) != len(g):
+        x, _ = current_bests.popitem()
+        h = bests[x]
+        u, d = h.popitem()
+
+        if u in allvisited:
+            if len(h) != 0:
+                _, d2 = h.peekitem()
+                current_bests[x] = d2
+            continue
+
+        dists[x][u] = d
+        closest_sources[u] = x
+        allvisited.add(u)
+
+        for e in u.incident_edges:
+            v = e.neighbor(u)
+            if v in allvisited:
+                continue
+            if v not in h or d + weights[e] < h[v]:
+                h[v] = d + weights[e]
+                paths[x][v] = paths[x][u] + [e]
+
+        if len(h) != 0:
+            _, d2 = h.peekitem()
+            current_bests[x] = d2
+    return dists, paths, closest_sources
