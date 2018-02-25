@@ -18,7 +18,10 @@ def compute(instance):
         for x2 in instance.terms[i+1:]:
             v2 = nodes[x2]
             e = gc.add_edge(v1, v2)
-            weights[e] = dists[x1][x2]
+            try:
+                weights[e] = dists[x1][x2]
+            except KeyError:
+                weights[e] = dists[x2][x1]
 
     treec = kruskal(gc, weights)
 
@@ -27,6 +30,10 @@ def compute(instance):
         v1, v2 = ec.extremities
         x1 = nodesback[v1]
         x2 = nodesback[v2]
-        for e in paths[x1][x2]:
+        try:
+            path = paths[x1][x2]
+        except KeyError:
+            path = paths[x2][x1]
+        for e in path:
             tree.add(e)
     return tree

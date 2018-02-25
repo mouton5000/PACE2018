@@ -1,7 +1,7 @@
 from helpers.heap_dict import heapdict
 
 
-def dijkstra(g, source, weights):
+def dijkstra(g, source, weights, destinations=None):
     """Return all the shortest paths from the source."""
 
     bests = heapdict()
@@ -11,11 +11,16 @@ def dijkstra(g, source, weights):
     paths[source] = []
 
     visited = set([])
+    visiteddests = set([])
 
     while len(bests) != 0:
         u, d = bests.popitem()
         dists[u] = d
         visited.add(u)
+        if destinations and u in destinations:
+            visiteddests.add(u)
+            if len(visiteddests) == len(destinations):
+                return dists, paths
 
         for e in u.incident_edges:
             v = e.neighbor(u)
@@ -31,8 +36,10 @@ def dijkstra(g, source, weights):
 def all_shp_between_sources(g, sources, weights):
     dists = {}
     paths = {}
+    dests = set(sources)
     for x in sources:
-        distsx, pathsx = dijkstra(g, x, weights)
-        dists[x] = {y: distsx[y] for y in sources}
-        paths[x] = {y: pathsx[y] for y in sources}
+        dests.remove(x)
+        distsx, pathsx = dijkstra(g, x, weights, destinations=dests)
+        dists[x] = {y: distsx[y] for y in dests}
+        paths[x] = {y: pathsx[y] for y in dests}
     return dists, paths
