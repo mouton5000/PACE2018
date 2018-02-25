@@ -2,6 +2,7 @@ from dynamicgraphviz.graph.undirectedgraph import UndirectedGraph
 import instances
 import parameters
 
+
 def read_input():
     """Read the input and return the corresponding instance."""
     input()
@@ -51,10 +52,14 @@ def read_input():
 
 
 def print_value(instance, tree):
-    print('VALUE', sum(instance.weights[e] for e in tree))
+    if tree is not None:
+        print('VALUE', sum(instance.weights[e] for e in tree))
 
 
 def print_tree(tree):
+    if tree is None:
+        print(None)
+        return
     for e in tree:
         u, v = e.extremities
         print(u.index, v.index)
