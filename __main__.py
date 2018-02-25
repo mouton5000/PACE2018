@@ -34,7 +34,7 @@ try:
     if parameters.DEBUG:
         print('Instance lue, n = %d, m = %d, k = %d' % (len(instance.g), instance.g.nb_edges, len(instance.terms)))
 
-    for algo in [all, twoapprox, flac]:
+    for algo in [twoapprox, flac]:
         tree, cost = instance.simplify(algo.compute(instance))
 
         if parameters.DEBUG:
