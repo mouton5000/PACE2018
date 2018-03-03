@@ -1,6 +1,6 @@
 
 import input_output
-from algos import all, twoapprox, flac, melhorntwoapprox
+from algos import all, twoapprox, flac, melhorntwoapprox, localsearch
 import parameters
 import signal
 
@@ -48,6 +48,12 @@ try:
             btree = tree
             btreestr = input_output.get_output(instance, tree)
             best = cost
+
+    for tree in localsearch.compute(instance, btree):
+        btreestr = input_output.get_output(instance, tree)
+        if parameters.DEBUG:
+            btree = tree
+            input_output.print_value(instance, btree)
 
     output_tree()
 
