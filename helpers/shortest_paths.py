@@ -55,6 +55,10 @@ def voronoi(g, sources, weights):
     # Closest source of each node
     closest_sources = {}
 
+    # For each source, list the nodes that are at the limit of the voronoi region centered on that source.
+    # For each such node v, list the edges (v, w) such that w is in another region.
+    limits = defaultdict(lambda: defaultdict(set))
+
     # Heap of closest nodes of each source
     bests = {}
     current_bests = heapdict()
@@ -88,8 +92,14 @@ def voronoi(g, sources, weights):
 
         for e in u.incident_edges:
             v = e.neighbor(u)
-            if v in closest_sources:
+            try:
+                y = closest_sources[v]
+                if x != y:
+                    limits[x][u].add(e)
+                    limits[y][v].add(e)
                 continue
+            except KeyError:
+                pass
             if v not in h or d + weights[e] < h[v]:
                 h[v] = d + weights[e]
                 paths[x][v] = paths[x][u] + [e]
@@ -98,10 +108,10 @@ def voronoi(g, sources, weights):
             _, d2 = h.peekitem()
             current_bests[x] = d2
     print(len(closest_sources), len(g))
-    return dists, paths, closest_sources
+    return dists, paths, closest_sources, limits
 
 
-def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, new_sources):
+def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limits, new_sources):
     """Update the voronoi regions of a graph where a set of new sources is added."""
 
     allvisited = set()
@@ -123,31 +133,43 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, new_
         h = bests[x]
         u, d = h.popitem()
 
+        # u was already visited by a new source
         if u in allvisited:
             if len(h) != 0:
                 _, d2 = h.peekitem()
                 current_bests[x] = d2
             continue
 
-        cs = closest_sources[u]
-        dcs = dists[cs][u]
+        allvisited.add(u)
 
-        if dcs <= d:
-            if len(h) != 0:
-                _, d2 = h.peekitem()
-                current_bests[x] = d2
-            continue
-
-        del dists[cs][u]
+        y = closest_sources[u]
+        del dists[y][u]
+        try:
+            del limits[y][u]
+        except KeyError:
+            pass
         dists[x][u] = d
         closest_sources[u] = x
-        allvisited.add(u)
 
         for e in u.incident_edges:
             v = e.neighbor(u)
             if v in allvisited:
+                y = closest_sources[v]
+                if x != y:
+                    limits[x][u].add(e)
+                    limits[y][v].add(e)
                 continue
-            if v not in h or d + weights[e] < h[v]:
+            if v not in h:
+                dv = d + weights[e]
+                y = closest_sources[v]
+                if dists[y][v] <= dv:
+                    limits[x][u].add(e)
+                    limits[y][v].add(e)
+                else:
+                    h[v] = dv
+                    paths[x][v] = paths[x][u] + [e]
+                continue
+            if d + weights[e] < h[v]:
                 h[v] = d + weights[e]
                 paths[x][v] = paths[x][u] + [e]
 
