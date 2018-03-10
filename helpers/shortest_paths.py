@@ -176,4 +176,3 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
         if len(h) != 0:
             _, d2 = h.peekitem()
             current_bests[x] = d2
-    return dists, paths, closest_sources
