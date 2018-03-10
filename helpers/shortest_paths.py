@@ -144,6 +144,7 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
 
         y = closest_sources[u]
         del dists[y][u]
+        del paths[y][u]
         try:
             del limits[y][u]
         except KeyError:
