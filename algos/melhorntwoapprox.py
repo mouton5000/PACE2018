@@ -8,7 +8,7 @@ from helpers.spanning_trees import kruskal
 def compute(instance):
     """Return the Melhorn et al 2-approx algorithm"""
 
-    dists, paths, closest_sources = voronoi(instance.g, instance.terms, instance.weights)
+    dists, paths, closest_sources, limits = voronoi(instance.g, instance.terms, instance.weights)
 
     gc = UndirectedGraph()
     nodes = {x: gc.add_node() for x in instance.terms}
@@ -16,24 +16,24 @@ def compute(instance):
     weights = {}
     pathslinks = {}
 
-    for e in instance.g.edges:
-        u, v = e.extremities
-        xu = closest_sources[u]
-        xv = closest_sources[v]
+    for x, limit_nodes in limits.items():
+        xc = nodes[x]
+        for u, edges in limit_nodes.items():
+            for e in edges:
+                v = e.neighbor(u)
+                y = closest_sources[v]
+                yc = nodes[y]
 
-        if xu != xv:
-            xuc = nodes[xu]
-            xvc = nodes[xv]
-            wc = dists[xu][u] + instance.weights[e] + dists[xv][v]
-            try:
-                ec = xuc.get_incident_edge(xvc)
-                if weights[ec] > wc:
+                wc = dists[x][u] + instance.weights[e] + dists[y][v]
+                try:
+                    ec = xc.get_incident_edge(yc)
+                    if weights[ec] > wc:
+                        weights[ec] = wc
+                        pathslinks[ec] = (u, v, e)
+                except NodeError:
+                    ec = gc.add_edge(xc, yc)
                     weights[ec] = wc
                     pathslinks[ec] = (u, v, e)
-            except NodeError:
-                ec = gc.add_edge(xuc, xvc)
-                weights[ec] = wc
-                pathslinks[ec] = (u, v, e)
 
     treec = kruskal(gc, weights)
 
