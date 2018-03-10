@@ -9,6 +9,30 @@ class SteinerInstance:
         self.terms = terms
         self.weights = weights
 
+    def check(self, t):
+        x = self.terms[0]
+        connected = [x]
+
+        while True:
+            print(len(connected))
+            update = False
+            for e in t:
+                u, v = e.extremities
+                if u in connected and v not in connected:
+                    connected.append(v)
+                    update = True
+                    continue
+                if v in connected and u not in connected:
+                    connected.append(u)
+                    update = True
+                    continue
+
+            if not update:
+                break
+
+        return all(x in connected for x in self.terms)
+
+
     def simplify(self, t):
         """Simplify the solution or return None if not all the terminals are connected. """
 
