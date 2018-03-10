@@ -176,3 +176,77 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
         if len(h) != 0:
             _, d2 = h.peekitem()
             current_bests[x] = d2
+
+
+def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limits, rem_sources):
+    """Update the voronoi regions of a graph where a set of sources is removed."""
+
+    neighbor_sources = set([])
+
+    # Heap of closest nodes of each source
+    bests = defaultdict(lambda: heapdict())
+    current_bests = heapdict()
+
+    for y in rem_sources:
+        del dists[y]
+        del paths[y]
+        for v, edges in limits[y].items():
+            for e in edges:
+                u = e.neighbor(v)
+                try:
+                    x = closest_sources[u]
+                    if x in rem_sources:
+                        continue
+
+                    neighbor_sources.add(x)
+                    h = bests[x]
+                    d = dists[x][u]
+                    h[u] = d
+                    del closest_sources[u]
+                    del limits[x][u]
+                except KeyError:
+                    pass
+
+        del limits[y]
+
+    for x in neighbor_sources:
+        _, d2 = bests[x].peekitem()
+        current_bests[x] = d2
+
+    while len(current_bests) > 0:
+        x, _ = current_bests.popitem()
+        h = bests[x]
+        u, d = h.popitem()
+
+        try:
+            if closest_sources[u] in neighbor_sources:
+                if len(h) != 0:
+                    _, d2 = h.peekitem()
+                    current_bests[x] = d2
+                continue
+        except KeyError:
+            pass
+
+        dists[x][u] = d
+        closest_sources[u] = x
+
+        for e in u.incident_edges:
+            v = e.neighbor(u)
+            try:
+                y = closest_sources[v]
+                if y not in rem_sources:
+                    if x != y:
+                        limits[x][u].add(e)
+                        limits[y][v].add(e)
+                    continue
+            except KeyError:
+                pass
+            if v not in h or d + weights[e] < h[v]:
+                h[v] = d + weights[e]
+                paths[x][v] = paths[x][u] + [e]
+
+        if len(h) != 0:
+            _, d2 = h.peekitem()
+            current_bests[x] = d2
+
+
