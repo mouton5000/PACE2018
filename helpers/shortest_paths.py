@@ -107,7 +107,6 @@ def voronoi(g, sources, weights):
         if len(h) != 0:
             _, d2 = h.peekitem()
             current_bests[x] = d2
-    print(len(closest_sources), len(g))
     return dists, paths, closest_sources, limits
 
 
