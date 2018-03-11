@@ -39,7 +39,6 @@ def all_shp_between_sources(g, sources, weights):
     paths = {}
     dests = set(sources)
     for x in sources:
-        print(x)
         dests.remove(x)
         distsx, pathsx = dijkstra(g, x, weights, destinations=dests)
         dists[x] = {y: distsx[y] for y in dests}
@@ -127,6 +126,8 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
     for x in new_sources:
         paths[x] = {x: []}
 
+    limits_edge_candidates = []
+
     while len(current_bests) > 0:
         x, _ = current_bests.popitem()
         h = bests[x]
@@ -142,12 +143,13 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
         allvisited.add(u)
 
         y = closest_sources[u]
-        del dists[y][u]
-        del paths[y][u]
-        try:
-            del limits[y][u]
-        except KeyError:
-            pass
+        if y != x:
+            del dists[y][u]
+            del paths[y][u]
+            try:
+                del limits[y][u]
+            except KeyError:
+                pass
         dists[x][u] = d
         closest_sources[u] = x
 
@@ -163,8 +165,11 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
                 dv = d + weights[e]
                 y = closest_sources[v]
                 if dists[y][v] <= dv:
-                    limits[x][u].add(e)
-                    limits[y][v].add(e)
+                    # Except if there is an other path from x to v that is shorter that dists[y][v]
+                    # then u and v are at the limits of the regions of x and y
+                    # in that case, when the while loop ends, x and y remains respectively the closest sources of u
+                    # and v
+                    limits_edge_candidates.append((x, y, u, v, e))
                 else:
                     h[v] = dv
                     paths[x][v] = paths[x][u] + [e]
@@ -176,6 +181,11 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
         if len(h) != 0:
             _, d2 = h.peekitem()
             current_bests[x] = d2
+
+    for x, y, u, v, e in limits_edge_candidates:
+        if x == closest_sources[u] and y == closest_sources[v]:
+            limits[x][u].add(e)
+            limits[y][v].add(e)
 
 
 def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limits, rem_sources):
@@ -248,5 +258,3 @@ def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
         if len(h) != 0:
             _, d2 = h.peekitem()
             current_bests[x] = d2
-
-
