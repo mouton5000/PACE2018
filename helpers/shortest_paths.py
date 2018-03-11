@@ -212,6 +212,21 @@ def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
                     h = bests[x]
                     d = dists[x][u]
                     h[u] = d
+
+                    # Reinit u to start the iteration from u
+                    # remove u from the closest sources list
+                    # remove u from the limit region of x
+                    # and remove every incident edge of u from the limit regions of the neighbors of x
+                    # (except e, this is done after the for loop by removing y from the keys of the dict limits)
+                    for ep in limits[x][u]:
+                        if ep == e:
+                            continue
+                        w = ep.neighbor(u)
+                        try:
+                            z = closest_sources[w]
+                            limits[z][w].remove(ep)
+                        except KeyError:
+                            pass
                     del closest_sources[u]
                     del limits[x][u]
                 except KeyError:
