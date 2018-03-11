@@ -1,7 +1,7 @@
 from collections import defaultdict
 import random
 import copy
-from algos import melhorntwoapprox
+from algos.melhorntwoapprox import MelhornTwoApprox
 
 ADD_PROBA = 0.5
 REM_PROBA = 0.5
@@ -15,23 +15,26 @@ def compute(instance, tree):
         deg[u] += 1
         deg[v] += 1
 
-    key_vertices = [u for u in deg if deg[u] >= 3]
+    melhorn = MelhornTwoApprox(instance)
+
+    key_vertices = [u for u in deg if deg[u] >= 3 and u not in instance.terms]
+    key_vertices.sort(key=lambda v:v.index)  # to fix the order of the vertices, otherwise non determinism appear
     cost = sum(instance.weights[e] for e in tree)
-    instance.terms += key_vertices
+    melhorn.add_sources(key_vertices)
 
     while True:
         r = random.random()
 
         if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
-            v = random.choice([v for v in instance.g if v not in key_vertices])
+            v = random.choice([v for v in instance.g if v not in key_vertices and v not in instance.terms])
             key_vertices.append(v)
-            instance.terms.append(v)
+            melhorn.add_sources([v])
         elif len(key_vertices) > 0 and r < ADD_PROBA + REM_PROBA:
             v = random.choice(key_vertices)
             key_vertices.remove(v)
-            instance.terms.remove(v)
+            melhorn.rem_sources([v])
 
-        tree2 = melhorntwoapprox.compute(instance)
+        tree2 = melhorn.compute()
         cost2 = sum(instance.weights[e] for e in tree2)
 
         if cost2 < cost:
@@ -40,7 +43,7 @@ def compute(instance, tree):
         else:
             if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
                 del key_vertices[-1]
-                del instance.terms[-1]
+                melhorn.rem_sources([v])
             elif len(key_vertices) > 0 and r < ADD_PROBA + REM_PROBA:
                 key_vertices.append(v)
-                instance.terms.append(v)
+                melhorn.add_sources([v])
