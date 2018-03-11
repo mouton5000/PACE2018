@@ -14,7 +14,6 @@ class SteinerInstance:
         connected = [x]
 
         while True:
-            print(len(connected))
             update = False
             for e in t:
                 u, v = e.extremities
@@ -31,7 +30,6 @@ class SteinerInstance:
                 break
 
         return all(x in connected for x in self.terms)
-
 
     def simplify(self, t):
         """Simplify the solution or return None if not all the terminals are connected. """
