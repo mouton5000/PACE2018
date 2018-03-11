@@ -71,6 +71,19 @@ class MelhornTwoApprox:
         incremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, new_terms)
 
+        rem_edges = []
+        for ec in self.gc.edges:
+            vuc, vvc = ec.extremities
+            xu = self.nodesback[vuc]
+            xv = self.nodesback[vvc]
+            u, v, e = self.pathslinks[ec]
+
+            if self.closest_sources[u] != xu and self.closest_sources[u] != xv or \
+                self.closest_sources[v] != xu and self.closest_sources[v] != xv:
+                rem_edges.append(ec)
+        for ec in rem_edges:
+            self.gc.remove_edge(ec)
+
         self.sources |= set(new_terms)
 
         nodes = {x: self.gc.add_node() for x in new_terms}
@@ -99,6 +112,7 @@ class MelhornTwoApprox:
     def rem_sources(self, rem_terms):
         decremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, rem_terms)
+
         self.sources -= set(rem_terms)
         neighbors = set()
 
@@ -131,7 +145,6 @@ class MelhornTwoApprox:
                         ec = self.gc.add_edge(xc, yc)
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
-
 
 def compute(instance):
     """Return the Melhorn et al 2-approx algorithm"""
