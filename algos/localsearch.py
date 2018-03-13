@@ -34,8 +34,7 @@ def compute(instance, tree):
             key_vertices.remove(v)
             melhorn.rem_sources([v])
 
-        tree2 = melhorn.compute()
-        cost2 = sum(instance.weights[e] for e in tree2)
+        tree2, cost2 = instance.simplify(melhorn.compute())
 
         if cost2 < cost:
             yield tree2
