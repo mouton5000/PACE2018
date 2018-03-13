@@ -83,7 +83,7 @@ def voronoi(g, sources, weights):
         if u in closest_sources:
             if len(h) != 0:
                 _, d2 = h.peekitem()
-                current_bests[x] = d2
+                current_bests[x] = d2 * (n + 1) + x.index
             continue
 
         dists[x][u] = d
@@ -105,12 +105,14 @@ def voronoi(g, sources, weights):
 
         if len(h) != 0:
             _, d2 = h.peekitem()
-            current_bests[x] = d2
+            current_bests[x] = d2 * (n + 1) + x.index
     return dists, paths, closest_sources, limits
 
 
 def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limits, new_sources):
     """Update the voronoi regions of a graph where a set of new sources is added."""
+
+    n = len(g)
 
     allvisited = set()
 
@@ -137,7 +139,7 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
         if u in allvisited:
             if len(h) != 0:
                 _, d2 = h.peekitem()
-                current_bests[x] = d2
+                current_bests[x] = d2 * (n + 1) + x.index
             continue
 
         allvisited.add(u)
@@ -180,7 +182,7 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
 
         if len(h) != 0:
             _, d2 = h.peekitem()
-            current_bests[x] = d2
+            current_bests[x] = d2 * (n + 1) + x.index
 
     for x, y, u, v, e in limits_edge_candidates:
         if x == closest_sources[u] and y == closest_sources[v]:
@@ -190,6 +192,8 @@ def incremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
 
 def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limits, rem_sources):
     """Update the voronoi regions of a graph where a set of sources is removed."""
+
+    n = len(g)
 
     neighbor_sources = set([])
 
@@ -229,6 +233,7 @@ def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
                             pass
                     del closest_sources[u]
                     del limits[x][u]
+
                 except KeyError:
                     pass
 
@@ -236,7 +241,7 @@ def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
 
     for x in neighbor_sources:
         _, d2 = bests[x].peekitem()
-        current_bests[x] = d2
+        current_bests[x] = d2 * (n + 1) + x.index
 
     while len(current_bests) > 0:
         x, _ = current_bests.popitem()
@@ -247,7 +252,7 @@ def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
             if closest_sources[u] in neighbor_sources:
                 if len(h) != 0:
                     _, d2 = h.peekitem()
-                    current_bests[x] = d2
+                    current_bests[x] = d2 * (n + 1) + x.index
                 continue
         except KeyError:
             pass
@@ -272,4 +277,4 @@ def decremental_voronoi(g, sources, weights, dists, paths, closest_sources, limi
 
         if len(h) != 0:
             _, d2 = h.peekitem()
-            current_bests[x] = d2
+            current_bests[x] = d2 * (n + 1) + x.index
