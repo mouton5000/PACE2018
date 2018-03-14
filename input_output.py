@@ -51,6 +51,54 @@ def read_input():
     return instances.SteinerInstance(g, terms, weights)
 
 
+def read_input_from_file(f):
+    """Read the input from file"""
+    f.readline()
+    size = int(f.readline().split()[-1])
+    nb_edges = int(f.readline().split()[-1])
+
+    g = UndirectedGraph()
+
+    if parameters.DEBUG:
+        print('Build nodes')
+
+    nodes = [g.add_node() for _ in range(size)]
+
+    if parameters.DEBUG:
+        print('Build edges')
+    edges = []
+    weights = {}
+    i = 0
+    for i in range(nb_edges):
+        if parameters.DEBUG:
+            i += 1
+            if i % 1000 == 0:
+                print('Edge %d / %d' % (i, nb_edges))
+        line = f.readline()
+        _, u, v, w = line.split()
+
+        e = g.add_edge(nodes[int(u) - 1], nodes[int(v) - 1])
+        weights[e] = int(w)
+
+        edges.append((int(u), int(v), int(w)))
+
+    line = f.readline()
+    while 'Terminals' not in line:
+        line = f.readline()
+    if 'SECTION' in line:
+        line = f.readline()
+        while 'Terminals' not in line:
+            line = f.readline()
+    nb_terms = int(line.split()[-1])
+    terms = []
+    for i in range(nb_terms):
+        line = f.readline()
+        _, t = line.split()
+        terms.append(nodes[int(t) - 1])
+
+    return instances.SteinerInstance(g, terms, weights)
+
+
 def print_value(instance, tree):
     if tree is not None:
         print('VALUE', sum(instance.weights[e] for e in tree))
