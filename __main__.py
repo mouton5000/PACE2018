@@ -28,9 +28,16 @@ def output_tree():
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
-
 try:
-    instance = input_output.read_input()
+    if parameters.DEBUG:
+        import sys
+        if len(sys.argv) > 1:
+            with open(sys.argv[1], 'r') as f:
+                instance = input_output.read_input_from_file(f)
+        else:
+            instance = input_output.read_input()
+    else:
+        instance = input_output.read_input()
 
     if parameters.DEBUG:
         print('Instance lue, n = %d, m = %d, k = %d' % (len(instance.g), instance.g.nb_edges, len(instance.terms)))
@@ -40,6 +47,8 @@ try:
             print(algo)
 
         tree, cost = instance.simplify(algo.compute(instance))
+        if parameters.DEBUG:
+            print('Tree is feasible:', instance.check(tree))
 
         if parameters.DEBUG:
             input_output.print_value(instance, tree)
@@ -54,6 +63,18 @@ try:
         if parameters.DEBUG:
             btree = tree
             input_output.print_value(instance, btree)
+
+            with open('out.txt', 'w') as f:
+                f.write(input_output.get_output(instance, btree))
+
+            b = instance.check(btree)
+            print(b)
+            # import subprocess
+            # cmd = ['python2', 'validator.py', 'test_instances/instance055.gr', 'out.txt']
+            # subprocess.call(cmd)
+            if not b:
+                import sys
+                sys.exit(-1)
 
     output_tree()
 
