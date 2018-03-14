@@ -2,6 +2,7 @@ from collections import defaultdict
 import random
 import copy
 from algos.melhorntwoapprox import MelhornTwoApprox
+import parameters
 
 ADD_PROBA = 0.5
 REM_PROBA = 0.5
@@ -18,11 +19,13 @@ def compute(instance, tree):
     melhorn = MelhornTwoApprox(instance)
 
     key_vertices = [u for u in deg if deg[u] >= 3 and u not in instance.terms]
-    key_vertices.sort(key=lambda v:v.index)  # to fix the order of the vertices, otherwise non determinism appear
+    key_vertices.sort(key=lambda v: v.index)  # to fix the order of the vertices, otherwise non determinism appear
     cost = sum(instance.weights[e] for e in tree)
     melhorn.add_sources(key_vertices)
 
     while True:
+        if parameters.DEBUG and parameters.timer_end():
+            break
         r = random.random()
 
         if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:

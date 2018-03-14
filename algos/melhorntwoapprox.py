@@ -68,6 +68,7 @@ class MelhornTwoApprox:
         return tree
 
     def add_sources(self, new_terms):
+
         incremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, new_terms)
 
@@ -79,8 +80,9 @@ class MelhornTwoApprox:
             u, v, e = self.pathslinks[ec]
 
             if self.closest_sources[u] != xu and self.closest_sources[u] != xv or \
-                self.closest_sources[v] != xu and self.closest_sources[v] != xv:
+               self.closest_sources[v] != xu and self.closest_sources[v] != xv:
                 rem_edges.append(ec)
+
         for ec in rem_edges:
             self.gc.remove_edge(ec)
 
