@@ -59,6 +59,7 @@ try:
             best = cost
 
     for tree in localsearch.compute(instance, btree):
+        tree, _ = instance.simplify(tree)
         btreestr = input_output.get_output(instance, tree)
         if parameters.DEBUG:
             btree = tree
@@ -67,12 +68,8 @@ try:
             with open('out.txt', 'w') as f:
                 f.write(input_output.get_output(instance, btree))
 
-            b = instance.check(btree)
-            print(b)
-            # import subprocess
-            # cmd = ['python2', 'validator.py', 'test_instances/instance055.gr', 'out.txt']
-            # subprocess.call(cmd)
-            if not b:
+            if not instance.check(btree):
+                print('not check')
                 import sys
                 sys.exit(-1)
 
