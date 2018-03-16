@@ -96,6 +96,16 @@ class DirectedGraph(_Graph):
         """
         return self._remove_link(a)
 
+    def revert_arc(self, a):
+        """Revert arc a in place."""
+        u, v = a.extremities
+        u._remove_incident_arc(a)
+        v._remove_incident_arc(a)
+        a._u = v
+        a._v = u
+        u._add_incident_arc(a)
+        v._add_incident_arc(a)
+
     def __str__(self):
         return '\n'.join(' '.join([('1' if node2.is_output_neighbor_of(node) else '0') for node2 in self]) for node
                          in self)
