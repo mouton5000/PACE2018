@@ -292,6 +292,9 @@ class _TreeNode:
         s = len(self.children)
         return s >= 3 or self.father is not None and s == 2
 
+    def is_root(self):
+        return self.father is None
+
     def __str__(self):
         return str(self.node)
 
