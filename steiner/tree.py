@@ -10,7 +10,7 @@ class Tree:
     is removed from the tree
     - remove an edge of the tree
     - simplify the tree: cut every leaf that is not a terminal (and do it again until every leaf is a terminal)
-
+    - iterate the edges of the tree
     The structure maintain the leaves (with the self.leaves attribute) and the keynodes (with the self.key_nodes
     attribute).
     """
@@ -21,6 +21,9 @@ class Tree:
         self.instance = instance
         self.leaves = set()
         self.key_nodes = set()
+
+    def __iter__(self):
+        return iter(tu.father_edge for u, tu in self.nodes.items() if tu.father_edge is not None)
 
     def add_edge(self, e):
         """ Add the edge e to the tree, if doing so creates a cycle, the maximum weight edge of that cycle
@@ -329,6 +332,8 @@ if __name__ == '__main__':
         print(v, (tv.father, tv.root) if tv is not None else None)
     print(t.leaves)
     print(t.key_nodes)
+    for e in t:
+        print(e)
 
     print() 
 
@@ -347,3 +352,5 @@ if __name__ == '__main__':
         print(v, (tv.father, tv.find()) if tv is not None else None)
     print(t.leaves)
     print(t.key_nodes)
+    for e in t:
+        print(e)
