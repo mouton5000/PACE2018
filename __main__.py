@@ -1,5 +1,5 @@
 
-import input_output
+import steiner.input_output as input_output
 from algos import all, twoapprox, flac, melhorntwoapprox, localsearch
 import parameters
 import signal
