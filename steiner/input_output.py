@@ -99,9 +99,9 @@ def read_input():
     return instances.SteinerInstance(g, terms, weights)
 
 
-def print_value(instance, tree):
+def print_value(tree):
     if tree is not None:
-        print('VALUE', sum(instance.weights[e] for e in tree))
+        print('VALUE', tree.cost)
 
 
 def print_tree(tree):
@@ -113,15 +113,15 @@ def print_tree(tree):
         print(u.index, v.index)
 
 
-def print_output(instance, tree):
+def print_output(tree):
     """ Print the solution tree of the given instance."""
-    print_value(instance, tree)
+    print_value(tree)
     print_tree(tree)
 
 
-def get_value(instance, tree):
+def get_value(tree):
     if tree is not None:
-        return 'VALUE %d\n' % sum(instance.weights[e] for e in tree)
+        return 'VALUE %d\n' % tree.cost
 
 
 def get_tree(tree):
@@ -135,6 +135,6 @@ def get_tree(tree):
     return '\n'.join(str_e(e) for e in tree)
 
 
-def get_output(instance, tree):
+def get_output(tree):
     """ Return a string representing the solution"""
-    return get_value(instance, tree) + get_tree(tree)
+    return get_value(tree) + get_tree(tree)

@@ -3,6 +3,7 @@ from dynamicgraphviz.exceptions.graph_errors import NodeError
 
 from helpers.shortest_paths import voronoi, incremental_voronoi, decremental_voronoi
 from helpers.spanning_trees import kruskal
+from steiner.tree import Tree
 
 
 class MelhornTwoApprox:
@@ -45,7 +46,7 @@ class MelhornTwoApprox:
     def compute(self):
         treec = kruskal(self.gc, self.weights)
 
-        tree = set([])
+        tree = Tree(self.instance)
         for ec in treec:
             vuc, vvc = ec.extremities
             xu = self.nodesback[vuc]
@@ -60,11 +61,11 @@ class MelhornTwoApprox:
                 pathv = self.paths[xv][u]
 
             for f in pathu:
-                tree.add(f)
+                tree.add_edge(f)
             for f in pathv:
-                tree.add(f)
-            tree.add(e)
-
+                tree.add_edge(f)
+            tree.add_edge(e)
+        tree.simplify()
         return tree
 
     def add_sources(self, new_terms):

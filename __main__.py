@@ -20,7 +20,7 @@ best = None
 
 def output_tree():
     if parameters.DEBUG:
-        input_output.print_value(instance, btree)
+        input_output.print_value(btree)
     else:
         print(btreestr)
 
@@ -46,27 +46,26 @@ try:
         if parameters.DEBUG:
             print(algo)
 
-        tree, cost = instance.simplify(algo.compute(instance))
+        tree = algo.compute(instance)
         if parameters.DEBUG:
             print('Tree is feasible:', instance.check(tree))
 
         if parameters.DEBUG:
-            input_output.print_value(instance, tree)
+            input_output.print_value(tree)
 
-        if best is None or cost < best:
+        if best is None or tree.cost < best:
             btree = tree
-            btreestr = input_output.get_output(instance, tree)
-            best = cost
+            btreestr = input_output.get_output(tree)
+            best = tree.cost
 
     for tree in localsearch.compute(instance, btree):
-        tree, _ = instance.simplify(tree)
-        btreestr = input_output.get_output(instance, tree)
+        btreestr = input_output.get_output(tree)
         if parameters.DEBUG:
             btree = tree
-            input_output.print_value(instance, btree)
+            input_output.print_value(btree)
 
             with open('out.txt', 'w') as f:
-                f.write(input_output.get_output(instance, btree))
+                f.write(input_output.get_output(btree))
 
             if not instance.check(btree):
                 print('not check')
