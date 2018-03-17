@@ -45,48 +45,58 @@ class Tree:
             return False
 
         we = self.instance.weights[e]
+        source = self._conflict(e, tu, tv)
 
-        ru = tu.find()
-        rv = tv.find()
+        if source is None:
+            return False
 
-        if ru != rv or self._conflict(e, tu, tv):
-            self.cost += we
+        self.cost += we
+
+        if source == tu:
+            self._union(tv, tu)
+        else:
             self._union(tu, tv)
 
-            self._check_leaf(tu)
-            self._check_leaf(tv)
-            self._check_key_node(tu)
-            self._check_key_node(tv)
+        self._check_leaf(tu)
+        self._check_leaf(tv)
+        self._check_key_node(tu)
+        self._check_key_node(tv)
 
-            return True
-        return False
+        return True
 
     def _union(self, tu, tv):
         tv.evert()
         tv.father = tu
 
     def _conflict(self, e, tu, tv):
-        f, tu2 = self._maximum_weight_ancestor_edge(tu, tv)
+        ru = tu.find()
+        rv = tv.find()
+
+        if ru != rv:
+            return tu
+
+        f, tu2, source = self._maximum_weight_ancestor_edge(tu, tv)
         we, wf = self.instance.weights[e], self.instance.weights[f]
         if wf > we:
             tu2.father = None
             self.cost -= - wf
-            return True
-        return False
+            return source
+        return None
 
     def _maximum_weight_ancestor_edge(self, tu, tv):
         ''' Return the maximum weight edge e of the cycle created when we add the (tu-tv) edge, except the edge (tu-tv).
         This is done by a Nearest common ancestor search.
-        Return the edge e and the child node of the edge (the node tn such that e = (tn.father - tn))
+        Return the edge e, the child node of the edge (the node tn such that e = (tn.father - tn) and the node
+        source = tu or tv such that e is on the path from source to the common ancestor of tu and tv)
         '''
         best = None
         wbest = None
 
-        def update(e, tn):
+        def update(e, tn, source):
             nonlocal best, wbest
             we = self.instance.weights[e]
             if wbest is None or wbest < we:
-                best = e, tn
+                best = e, tn, source
                 wbest = we
 
         su = set()
@@ -134,11 +144,11 @@ class Tree:
                 if not r:
                     break
 
-        for l in [lu, lv]:
+        for l, source in zip([lu, lv], [tu, tv]):
             for e, tn in l:
                 if e == last_e:
                     break
-                update(e, tn)
+                update(e, tn, source)
 
         return best
 
