@@ -15,19 +15,21 @@ class Tree:
     attribute).
     """
 
-    def __init__(self, instance):
+    def __init__(self, g, weights):
         self.cost = 0
         self.nodes = {}
-        self.instance = instance
+        self.g = g
+        self.weights = weights
         self.leaves = set()
         self.key_nodes = set()
 
     def __iter__(self):
         return iter(tu.father_edge for u, tu in self.nodes.items() if tu.father_edge is not None)
 
-    def add_edge(self, e):
-        """ Add the edge e to the tree, if doing so creates a cycle, the maximum weight edge of that cycle
-        is removed from the tree"""
+    def add_edge(self, e, handle_conflict=True):
+        """ Add the edge e to the tree. If doing so creates a cycle and if handle_conflict is True,
+        the maximum weight edge of that cycle is removed from the tree. If handle_conflict is False, the edge is not
+        added."""
         u, v = e.extremities
         try:
             tu = self.nodes[u]
@@ -44,8 +46,8 @@ class Tree:
         if tu.father == tv or tv.father == tu:
             return False
 
-        we = self.instance.weights[e]
-        source = self._conflict(e, tu, tv)
+        we = self.weights[e]
+        source = self._conflict(e, tu, tv, handle_conflict)
 
         if source is None:
             return False
@@ -68,15 +70,18 @@ class Tree:
         tv.evert()
         tv.father = tu
 
-    def _conflict(self, e, tu, tv):
+    def _conflict(self, e, tu, tv, handle_conflict):
         ru = tu.find()
         rv = tv.find()
 
         if ru != rv:
             return tu
 
+        if not handle_conflict:
+            return None
+
         f, tu2, source = self._maximum_weight_ancestor_edge(tu, tv)
-        we, wf = self.instance.weights[e], self.instance.weights[f]
+        we, wf = self.weights[e], self.weights[f]
         if wf > we:
             tu2.father = None
             self.cost -= - wf
@@ -94,7 +99,7 @@ class Tree:
 
         def update(e, tn, source):
             nonlocal best, wbest
-            we = self.instance.weights[e]
+            we = self.weights[e]
             if wbest is None or wbest < we:
                 best = e, tn, source
                 wbest = we
@@ -165,7 +170,7 @@ class Tree:
             tv.father = None
             tv.enroot()
 
-        self.cost -= self.instance.weights[e]
+        self.cost -= self.weights[e]
         self._check_leaf(tu)
         self._check_leaf(tv)
         self._check_key_node(tu)
@@ -183,7 +188,7 @@ class Tree:
         else:
             self.key_nodes.discard(tu)
 
-    def simplify(self):
+    def simplify(self, terms):
         """Cut every leaf that is not a terminal (and do it again until every leaf is a terminal)"""
 
         torem = []
@@ -191,7 +196,7 @@ class Tree:
 
         def simplify_leaf(tn):
             torem.append(tn)
-            while tn.node not in self.instance.terms:
+            while tn.node not in terms:
                 tv = tn.father
                 if tv is not None:
                     e = tn.father_edge
@@ -202,12 +207,13 @@ class Tree:
                     tv.father = None
 
                     # If tn is a root of the forest, if can be referenced as tu.root for some node tu
-                    # By doing this, any node pointing to tn will then point to the root of tv (currently itself due
+                    # By doing this, any node pointing to tn will then point to the root of tv (currently itself due
                     # to the "tv.father = None" statement).
+
                     tn.root = tv
 
                 del self.nodes[tn.node]
-                self.cost -= self.instance.weights[e]
+                self.cost -= self.weights[e]
 
                 if tv.is_leaf():
                     tn = tv
@@ -218,7 +224,7 @@ class Tree:
                 toadd.append(tn)
 
         for tu in self.leaves:
-            if tu.node not in self.instance.terms:
+            if tu.node not in terms:
                 simplify_leaf(tu)
 
         for tu in torem:
@@ -311,8 +317,10 @@ class _TreeNode:
     def __repr__(self):
         return str(self.node)
 
+
 if __name__ == '__main__':
     from dynamicgraphviz.graph.undirectedgraph import UndirectedGraph
+
     g = UndirectedGraph()
     v1, v2, v3, v4, v5, v6, v7, v8 = [g.add_node() for _ in range(8)]
     e0 = g.add_edge(v8, v1)
@@ -336,7 +344,7 @@ if __name__ == '__main__':
     terms = [v1, v5, v6]
     inst = instances.SteinerInstance(g, terms, weights)
 
-    t = Tree(inst)
+    t = Tree(g, weights)
     for e in g.edges:
         print(e, t.add_edge(e))
     print(t.cost)
@@ -348,10 +356,10 @@ if __name__ == '__main__':
     for e in t:
         print(e)
 
-    print() 
+    print()
 
     print()
-    t.simplify()
+    t.simplify(terms)
     print(t.cost)
     for v in g:
         tv = t.nodes[v] if v in t.nodes else None

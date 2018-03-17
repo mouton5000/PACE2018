@@ -10,12 +10,14 @@ class MelhornTwoApprox:
     def __init__(self, instance):
         dists, paths, closest_sources, limits = voronoi(instance.g, instance.terms, instance.weights)
         self.instance = instance
+
         self.dists = dists
         self.paths = paths
         self.closest_sources = closest_sources
         self.limits = limits
 
         self.gc = UndirectedGraph()
+        self.treec = None
 
         self.sources = set(self.instance.terms)
 
@@ -44,10 +46,16 @@ class MelhornTwoApprox:
                         self.pathslinks[ec] = (u, v, e)
 
     def compute(self):
-        treec = kruskal(self.gc, self.weights)
+        self.compute_spanning_tree()
+        return self.current_tree()
 
-        tree = Tree(self.instance)
-        for ec in treec:
+    def compute_spanning_tree(self):
+        self.treec = kruskal(self.gc, self.weights)
+
+    def current_tree(self):
+
+        tree = Tree(self.instance.g, self.instance.weights)
+        for ec in self.treec:
             vuc, vvc = ec.extremities
             xu = self.nodesback[vuc]
             xv = self.nodesback[vvc]
@@ -65,8 +73,12 @@ class MelhornTwoApprox:
             for f in pathv:
                 tree.add_edge(f)
             tree.add_edge(e)
-        tree.simplify()
+
+        tree.simplify(self.instance.terms)
         return tree
+
+    def current_cost(self):
+        return self.treec.cost
 
     def add_sources(self, new_terms):
 
@@ -148,6 +160,7 @@ class MelhornTwoApprox:
                         ec = self.gc.add_edge(xc, yc)
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
+
 
 def compute(instance):
     """Return the Melhorn et al 2-approx algorithm"""

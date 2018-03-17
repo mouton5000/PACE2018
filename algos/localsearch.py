@@ -36,9 +36,8 @@ def compute(instance, tree):
             if it > 1000:
                 return
 
-
-        if parameters.DEBUG and parameters.timer_end():
-            break
+        # if parameters.DEBUG and parameters.timer_end():
+        #     break
         r = random.random()
 
         if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
@@ -50,11 +49,11 @@ def compute(instance, tree):
             key_vertices.remove(v)
             melhorn.rem_sources([v])
 
-        tree2 = melhorn.compute()
+        melhorn.compute_spanning_tree()
 
-        if tree2.cost < cost:
-            yield tree2
-            cost = tree2.cost
+        if melhorn.current_cost() < cost:
+            yield melhorn.current_tree()
+            cost = melhorn.current_cost()
         else:
             if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
                 del key_vertices[-1]

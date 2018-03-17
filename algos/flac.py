@@ -11,7 +11,7 @@ def compute(instance):
     #
 
     # The solution to be returned
-    tree = Tree(instance)
+    tree = Tree(instance.g, instance.weights)
 
     # Associate the couples of nodes (u,v) and (v,u) to the edge {u,v}
     couple_to_edges = {}
@@ -293,5 +293,5 @@ def compute(instance):
         reached |= reached_nodes
         required_vertices -= reached_terminals
 
-    tree.simplify()
+    tree.simplify(instance.terms)
     return tree
