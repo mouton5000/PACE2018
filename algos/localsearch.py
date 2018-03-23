@@ -42,14 +42,14 @@ def compute(instance, tree):
 
         if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
             v = random.choice([v for v in instance.g if v not in key_vertices and v not in instance.terms])
+            print('ADD', v)
             key_vertices.append(v)
             melhorn.add_sources([v])
         elif len(key_vertices) > 0 and r < ADD_PROBA + REM_PROBA:
             v = random.choice(key_vertices)
+            print('REM', v)
             key_vertices.remove(v)
             melhorn.rem_sources([v])
-
-        melhorn.compute_spanning_tree()
 
         if melhorn.current_cost() < cost:
             yield melhorn.current_tree()
