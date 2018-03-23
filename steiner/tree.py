@@ -280,12 +280,29 @@ class _TreeNode:
     def find(self):
         root = self
 
+        roots = set()
         while root != root.root:
+            roots.add(root)
             root = root.root
+            # Cycle in the roots
+            if root in roots:
+                return self._find_anti_cycle()
 
         node = self
         while node != root:
             node, node.root = node.root, root
+        return root
+
+    def _find_anti_cycle(self):
+        ''' In case there is a cycle in the root tree, remove the cycle by using the father pointers'''
+        root = self
+
+        while root.father is not None:
+            root = root.father
+
+        node = self
+        while node is not None:
+            node, node.root = node.father, root
         return root
 
     def evert(self):
