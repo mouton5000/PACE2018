@@ -1,23 +1,24 @@
 import math
-import parameters
 
 
 class STTRee:
     def __init__(self):
         self.__path_nodes = {}
+        self.__cost = 0
 
     def __iter__(self):
         for node in self.__path_nodes:
             parent = self.parent(node)
-            yield node.get_incident_edge(parent)
+            if parent is not None:
+                yield node.get_incident_edge(parent)
 
     def __str__(self):
         s = ''
         for node in sorted(list(self.__path_nodes), key=lambda x: str(x)):
-            n1 = self.__path_node(node)
+            n1 = node
             while n1 is not None:
-                s += str(n1) + ' --' + str(self.cost(n1.node)) + '--> '
-                n1 = self.parent(n1.node)
+                s += str(n1) + ' --' + str(self.cost_of_node(n1)) + '--> '
+                n1 = self.parent(n1)
             s += '\\\n'
         return s
 
@@ -30,14 +31,19 @@ class STTRee:
         t = p.tail
 
         if t == n:
-            return n.dparent.node
+            return n.dparent.node if n.dparent is not None else None
         else:
-            return n.after.node
+            a = n.after
+            return a.node if a is not None else None
 
     def root(self, v):
         return self.__expose(v).tail.node
 
-    def cost(self, v):
+    @property
+    def cost(self):
+        return self.__cost
+
+    def cost_of_node(self, v):
         n = self.__path_node(v)
         p = n.root
         t = p.tail
@@ -50,19 +56,29 @@ class STTRee:
     def mincost(self, v):
         return self.__expose(v).pmincost
 
-    def update(self, v, cost):
-        self.__expose(v).pupdate(cost)
+    def __update(self, v, delta):
+        self.__expose(v).pupdate(delta)
+
+    def update_edge(self, v, delta):
+        w = self.parent(v)
+        if w is not None:
+            self.evert(w)
+            self.__update(v, delta)
+            self.__cost += delta
 
     def link(self, v, w, cost):
-        p = self.evert(v)
+        self.evert(v)
+        p = self.__path(v)
         q = self.__expose(w)
         self.__concatenate(p, q, cost)
+        self.__cost += cost
 
     def cut(self, v):
         self.__expose(v)
         p, q, x, y = self.__split(v)
         v.dparent = None
         v.dcost = None
+        self.__cost -= y
         return y
 
     def evert(self, v):
@@ -70,7 +86,69 @@ class STTRee:
         p.reverse()
         v.dparent = None
         v.dcost = None
-        return p
+
+    def min_cost_nca(self, v, w):
+        '''Return the node u such that, if a is the minimum common ancestor of v and w, the edge (u, parent(u)) is the
+        minimum cost edge over the edges on the paths from v to a and w to a. Return also the cost of the edge
+        (u, parent(u)).'''
+        pv = self.__expose(v)
+        leafw = self.__path_node(w)
+
+        def compare_generator():
+
+            if leafw.root == pv:
+                common_ancestor = w
+            else:
+                # Expose w until pv is splitted, the split node is the common ancestor
+                q, r, x, y = self.__split(w)
+                if q is not None:
+                    t = q.tail
+                    t.dparent, t.dcost = leafw, x
+
+                p = self.__path(w)
+                if r is not None:
+                    p = self.__concatenate(p, r, y)
+
+                t = p.tail
+                while t.dparent is not None:
+                    if t.dparent.root == pv:
+                        common_ancestor = t.dparent.node
+
+                        yield t.node,  t.dcost
+
+                        if not p.is_leaf():
+                            n1 = p.pmincost
+                            c1 = n1.pcost
+                            yield n1.node, c1
+
+                        break
+                    p = self.__splice(p)
+                    t = p.tail
+                else:
+                    return
+
+            if common_ancestor != v:
+
+                q, r, x, y = self.__split(common_ancestor)
+                if q is not None:
+                    t = q.tail
+                    nca = self.__path_node(common_ancestor)
+                    t.dparent, t.dcost = nca, x
+                    if r is not None:
+                        nca.dparent, nca.dcost = r.head, y
+
+
+                yield q.tail.node, x
+
+                if not q.is_leaf():
+                    n1 = q.pmincost
+                    c1 = n1.pcost
+                    yield n1.node, c1
+
+        try:
+            return min(compare_generator(), key=lambda x: x[1])
+        except ValueError:
+            return None
 
     def __path_node(self, v):
         try:
@@ -204,7 +282,7 @@ class _STTreePathLeaf(_STTreePathNode):
         else:
             return None
 
-    def pupdate(self, cost):
+    def pupdate(self, delta):
         pass
 
     def reverse(self):
@@ -374,6 +452,12 @@ class _STTreePathInternal(_STTreePathNode):
     def bright(self):
         return self.__bleft if self.reversed else self.__bright
 
+    def bleftr(self, reversed):
+        return self.__bright if reversed else self.__bleft
+
+    def brightr(self, reversed):
+        return self.__bleft if reversed else self.__bright
+
     @bleft.setter
     def bleft(self, left):
         if self.reversed:
@@ -426,20 +510,30 @@ class _STTreePathInternal(_STTreePathNode):
     @property
     def pmincost(self):
         node = self
+        reverse = False
         while True:
-            right = node.bright
-            if not right.is_leaf() and right.__netcost == 0:
+            if node.local_reversed:
+                reverse = not reverse
+            if node.__netcost == 0:
+                break
+
+            left = node.bleftr(reverse)
+            right = node.brightr(reverse)
+
+            if left.is_leaf():
                 node = right
-                continue
-            if node.__netcost > 0:
-                node = node.bleft
-                continue
-            break
+            elif right.is_leaf():
+                node = left
+            elif left.__netmin < right.__netmin:
+                node = left
+            else:
+                node = right
+
         node = node.bleft
         return node.tail
 
-    def pupdate(self, cost):
-        self.__netmin += cost
+    def pupdate(self, delta):
+        self.__netmin += delta
 
     def reverse(self):
         self.__reversed = not self.__reversed

@@ -44,10 +44,12 @@ def compute(instance, tree):
             v = random.choice([v for v in instance.g if v not in key_vertices and v not in instance.terms])
             key_vertices.append(v)
             melhorn.add_sources([v])
+            print('ADD', v)
         elif len(key_vertices) > 0 and r < ADD_PROBA + REM_PROBA:
             v = random.choice(key_vertices)
             key_vertices.remove(v)
             melhorn.rem_sources([v])
+            print('REM', v)
 
         melhorn.compute_spanning_tree()
 

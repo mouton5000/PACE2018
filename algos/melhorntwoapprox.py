@@ -1,8 +1,10 @@
+from collections import defaultdict
+
 from dynamicgraphviz.graph.undirectedgraph import UndirectedGraph
 from dynamicgraphviz.exceptions.graph_errors import NodeError
 
 from helpers.shortest_paths import voronoi, incremental_voronoi, decremental_voronoi
-from helpers.spanning_trees import kruskal
+from helpers.spanning_trees import DynamicSpanningTree, kruskal
 from steiner.tree import Tree
 
 
@@ -17,7 +19,7 @@ class MelhornTwoApprox:
         self.limits = limits
 
         self.gc = UndirectedGraph()
-        self.treec = None
+        self.treec = DynamicSpanningTree()
 
         self.sources = set(self.instance.terms)
 
@@ -50,7 +52,8 @@ class MelhornTwoApprox:
         return self.current_tree()
 
     def compute_spanning_tree(self):
-        self.treec = kruskal(self.gc, self.weights)
+        tree, non_tree = kruskal(self.gc, self.weights)
+        self.treec.reset(tree, non_tree, self.weights)
 
     def current_tree(self):
 
@@ -86,6 +89,8 @@ class MelhornTwoApprox:
                             self.dists, self.paths, self.closest_sources, self.limits, new_terms)
 
         rem_edges = []
+        add_edges = []
+
         for ec in self.gc.edges:
             vuc, vvc = ec.extremities
             xu = self.nodesback[vuc]
@@ -95,9 +100,6 @@ class MelhornTwoApprox:
             if self.closest_sources[u] != xu and self.closest_sources[u] != xv or \
                self.closest_sources[v] != xu and self.closest_sources[v] != xv:
                 rem_edges.append(ec)
-
-        for ec in rem_edges:
-            self.gc.remove_edge(ec)
 
         self.sources |= set(new_terms)
 
@@ -123,6 +125,15 @@ class MelhornTwoApprox:
                         ec = self.gc.add_edge(xc, yc)
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
+                        add_edges.append(ec)
+
+        for ec in add_edges:
+            print('L', ec)
+            self.treec.link(ec, self.weights[ec])
+        for ec in rem_edges:
+            print('R', ec)
+            self.treec.remove(ec)
+            self.gc.remove_edge(ec)
 
     def rem_sources(self, rem_terms):
         decremental_voronoi(self.instance.g, self.sources, self.instance.weights,
@@ -131,13 +142,19 @@ class MelhornTwoApprox:
         self.sources -= set(rem_terms)
         neighbors = set()
 
+        rem_edges = set()
+        rem_nodes = []
         for x in rem_terms:
             xc = self.nodes.pop(x)
+            rem_nodes.append(xc)
             neighbors |= set(xc.neighbors)
+            rem_edges |= set(xc.incident_edges)
             del self.nodesback[xc]
-            self.gc.remove_node(xc)
 
         neighbors -= set(xc for xc in neighbors if xc not in self.gc)
+
+        add_edges = set()
+        update_edges = defaultdict(int)
 
         for xc in neighbors:
             x = self.nodesback[xc]
@@ -153,13 +170,29 @@ class MelhornTwoApprox:
                     wc = self.dists[x][u] + self.instance.weights[e] + self.dists[y][v]
                     try:
                         ec = xc.get_incident_edge(yc)
-                        if self.weights[ec] > wc:
+                        we = self.weights[ec]
+                        if we > wc:
+                            if ec not in add_edges:
+                                update_edges[ec] += wc - we
                             self.weights[ec] = wc
                             self.pathslinks[ec] = (u, v, e)
                     except NodeError:
                         ec = self.gc.add_edge(xc, yc)
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
+                        add_edges.add(ec)
+        for ec, delta in update_edges.items():
+            print('RU', ec)
+            self.treec.decrease_edge_cost(ec, delta)
+        for ec in add_edges:
+            print('RA', ec)
+            self.treec.link(ec, self.weights[ec])
+        for ec in rem_edges:
+            print('RR', ec)
+            self.treec.remove(ec)
+        for xc in rem_nodes:
+            print('RR', xc)
+            self.gc.remove_node(xc)
 
 
 def compute(instance):
