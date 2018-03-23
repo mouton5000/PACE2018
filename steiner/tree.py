@@ -17,6 +17,7 @@ class Tree:
 
     def __init__(self, g, weights):
         self.cost = 0
+        self.__size = 0
         self.nodes = {}
         self.g = g
         self.weights = weights
@@ -26,10 +27,39 @@ class Tree:
     def __iter__(self):
         return iter(tu.father_edge for u, tu in self.nodes.items() if tu.father_edge is not None)
 
+    def __len__(self):
+        return self.__size
+
+    def check_root(self):
+        for tu in self.nodes.values():
+            r = tu.root
+            tn = tu
+            anc = []
+            while tn is not None:
+                anc.append(tn)
+                if r == tn:
+                    break
+                tn = tn.father
+            else:
+                print('Node :', tu)
+                print('Root : ', r)
+                print('Ancestors : ', anc)
+                return False
+        return True
+
     def add_edge(self, e, handle_conflict=True):
         """ Add the edge e to the tree. If doing so creates a cycle and if handle_conflict is True,
         the maximum weight edge of that cycle is removed from the tree. If handle_conflict is False, the edge is not
-        added."""
+        added.
+
+        Return None if e is already in the tree.
+        Return None if e is added to the tree and no cycle is created
+        Return e if e is not added to the tree
+        Return the maximum weight edge of the cycle created by the addition of e otherwise
+        """
+
+        print('add_edge', e)
+
         u, v = e.extremities
         try:
             tu = self.nodes[u]
@@ -44,15 +74,17 @@ class Tree:
             self.nodes[v] = tv
 
         if tu.father == tv or tv.father == tu:
-            return False
+            return None
 
         we = self.weights[e]
-        source = self._conflict(e, tu, tv, handle_conflict)
+        source, remove_edge = self._conflict(e, tu, tv, handle_conflict)
 
         if source is None:
-            return False
+            print('do not add')
+            return e
 
         self.cost += we
+        self.__size += 1
 
         if source == tu:
             self._union(tv, tu)
@@ -64,29 +96,34 @@ class Tree:
         self._check_key_node(tu)
         self._check_key_node(tv)
 
-        return True
+        return remove_edge
 
     def _union(self, tu, tv):
         tv.evert()
+        print('union', tu, '->', (tu.father, tu.root), tv, '->', tv.root)
         tv.father = tu
 
     def _conflict(self, e, tu, tv, handle_conflict):
-        ru = tu.find()
-        rv = tv.find()
+        ru = tu.ufd_find()
+        rv = tv.ufd_find()
+        print('conflict', tu, '->', ru, tv, '->', rv, handle_conflict)
 
         if ru != rv:
-            return tu
+            return tu, None
 
         if not handle_conflict:
-            return None
+            return None, None
 
         f, tu2, source = self._maximum_weight_ancestor_edge(tu, tv)
         we, wf = self.weights[e], self.weights[f]
         if wf > we:
+            print('remove conflicted edge', f, tu2, '->', tu2.root, tu2.father, '->', tu2.father.root)
             tu2.father = None
-            self.cost -= - wf
-            return source
-        return None
+            tu2.enroot()
+            self.cost -= wf
+            self.__size -= 1
+            return source, f
+        return None, e
 
     def _maximum_weight_ancestor_edge(self, tu, tv):
         ''' Return the maximum weight edge e of the cycle created when we add the (tu-tv) edge, except the edge (tu-tv).
@@ -96,6 +133,9 @@ class Tree:
         '''
         best = None
         wbest = None
+
+        tu2 = tu
+        tv2 = tv
 
         def update(e, tn, source):
             nonlocal best, wbest
@@ -127,21 +167,21 @@ class Tree:
 
         while True:
             if alt:
-                r = up(tu, sv, lu, su)
-                tu = tu.father
+                r = up(tu2, sv, lu, su)
+                tu2 = tu2.father
 
             else:
-                r = up(tv, su, lv, sv)
-                tv = tv.father
+                r = up(tv2, su, lv, sv)
+                tv2 = tv2.father
             if not r:
                 break
             alt = not alt
 
         if r is None:
             if alt:
-                tn, sm, ln, sn = tv, su, lv, sv
+                tn, sm, ln, sn = tv2, su, lv, sv
             else:
-                tn, sm, ln, sn = tu, sv, lu, su
+                tn, sm, ln, sn = tu2, sv, lu, su
 
             while True:
                 r = up(tn, sm, ln, sn)
@@ -149,16 +189,25 @@ class Tree:
                 if not r:
                     break
 
+
+        print('maximum_weight_ancestor_edge paths', tu, lu)
+        print('maximum_weight_ancestor_edge paths', tv, lv)
         for l, source in zip([lu, lv], [tu, tv]):
             for e, tn in l:
                 if e == last_e:
                     break
                 update(e, tn, source)
 
+        print('maximum_weight_ancestor_edge', best)
+
         return best
 
     def remove_edge(self, e):
         """Remove edge e from the tree, assume that the edge is in the tree."""
+
+
+        print('remove edge')
+
         u, v = e.extremities
         tu = self.nodes[u]
         tv = self.nodes[v]
@@ -171,6 +220,7 @@ class Tree:
             tv.enroot()
 
         self.cost -= self.weights[e]
+        self.__size -= 1
         self._check_leaf(tu)
         self._check_leaf(tv)
         self._check_key_node(tu)
@@ -214,6 +264,7 @@ class Tree:
 
                 del self.nodes[tn.node]
                 self.cost -= self.weights[e]
+                self.__size -= 1
 
                 if tv.is_leaf():
                     tn = tv
@@ -279,8 +330,15 @@ class _TreeNode:
 
     def find(self):
         root = self
+        print('find', self)
 
+        visited = set()
         while root != root.root:
+            print('find it', root, '->', root.root)
+            if root in visited:
+                import sys
+                sys.exit(-1)
+            visited.add(root)
             root = root.root
 
         node = self
@@ -289,16 +347,17 @@ class _TreeNode:
         return root
 
     def evert(self):
+        print('evert', self)
         c = self
-        f = c.father
         q = c.father
         self.father = None
-        while f is not None:
+        while q is not None:
+            print('evert >', c, '->', (c.father, c.root), q, '->', (q.father, q.root))
             f = q.father
             q.father = c
             c, q = q, f
-
-        self.father = None
+        print('evert >', c, '->', c.root, self, '->', self.root)
+        self.enroot()
 
     def enroot(self):
         for v in self:
