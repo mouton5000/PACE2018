@@ -58,6 +58,9 @@ try:
             btreestr = input_output.get_output(tree)
             best = tree.cost
 
+    if parameters.DEBUG:
+        print(localsearch)
+
     for tree in localsearch.compute(instance, btree):
         btreestr = input_output.get_output(tree)
         if parameters.DEBUG:
