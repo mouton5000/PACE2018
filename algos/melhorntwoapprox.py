@@ -168,32 +168,30 @@ class MelhornTwoApprox:
         self._remove_edges(rem_edges)
 
     def rem_sources(self, rem_terms):
-        decremental_voronoi(self.instance.g, self.sources, self.instance.weights,
+
+        neighbor_sources = decremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, rem_terms)
 
         self.sources -= set(rem_terms)
-        neighbors = set()
         rem_nodes = set()
         for x in rem_terms:
             xc = self.nodes.pop(x)
-            neighbors |= set(xc.neighbors)
             del self.nodesback[xc]
             rem_nodes.add(xc)
 
-        neighbors -= set(xc for xc in neighbors if xc not in self.gc)
-
         add_edges = set()
         decrease_key_edges = {}
-        for xc in neighbors:
-            x = self.nodesback[xc]
+        for x in neighbor_sources:
+            xc = self.nodes[x]
             limit_nodes = self.limits[x]
+            # print(xc, limit_nodes)
             for u, edges in limit_nodes.items():
                 for e in edges:
                     v = e.neighbor(u)
                     y = self.closest_sources[v]
-                    yc = self.nodes[y]
-                    if yc not in neighbors:
+                    if y not in neighbor_sources:
                         continue
+                    yc = self.nodes[y]
 
                     wc = self.dists[x][u] + self.instance.weights[e] + self.dists[y][v]
                     try:
@@ -219,6 +217,7 @@ class MelhornTwoApprox:
         for xc in rem_nodes:
             rem_edges |= set(xc.incident_edges)
             self.gc.remove_node(xc)
+
         self._remove_edges(rem_edges)
 
 
