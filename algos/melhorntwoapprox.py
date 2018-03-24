@@ -51,9 +51,10 @@ class MelhornTwoApprox:
 
         self.treec = kruskal(self.gc, self.weights)
         edges = set(self.treec)
-        for e in self.gc.edges:
-            if e not in edges:
-                self.nontree_edges.add(e)
+
+        for ec in self.gc.edges:
+            if ec not in edges:
+                self.nontree_edges.add(ec)
 
     def compute(self):
         return self.current_tree()
@@ -111,16 +112,19 @@ class MelhornTwoApprox:
             except ValueError:
                 self.treec.remove_edge(ec)
 
+        to_remove_from_non_tree = []
         for ec in self.nontree_edges:
-            self.treec.add_edge(ec, handle_conflict=False)
+            remove_edge = self.treec.add_edge(ec, handle_conflict=False)
+            if remove_edge is None:
+                to_remove_from_non_tree.append(ec)
             if len(self.treec) == len(self.gc) - 1:
                 break
+        for ec in to_remove_from_non_tree:
+            self.nontree_edges.remove(ec)
 
     def add_sources(self, new_terms):
         incremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, new_terms)
-
-        print(new_terms)
 
         rem_edges = []
         for ec in self.gc.edges:
