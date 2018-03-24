@@ -5,6 +5,7 @@ from helpers.shortest_paths import voronoi, incremental_voronoi, decremental_vor
 from helpers.spanning_trees import kruskal
 from steiner.tree import Tree
 from helpers.heap_dict import heapdict
+import parameters
 
 from helpers.sortedcontainers.sortedlist import SortedListWithKey
 
@@ -91,10 +92,6 @@ class MelhornTwoApprox:
         fc = self.treec.add_edge(ec)
         if fc is not None:
             self.nontree_edges.add(fc)
-        if not self.treec.check_root():
-            print('not check')
-            import sys
-            sys.exit(-1)
 
     def _decrease_edge_key(self, ec, wc, pathlink):
         if ec in self.nontree_edges:
@@ -136,7 +133,6 @@ class MelhornTwoApprox:
             if self.closest_sources[u] != xu and self.closest_sources[u] != xv or \
                self.closest_sources[v] != xu and self.closest_sources[v] != xv:
                 rem_edges.append(ec)
-        print(rem_edges)
 
         self.sources |= set(new_terms)
         nodes = {x: self.gc.add_node() for x in new_terms}

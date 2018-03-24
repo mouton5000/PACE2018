@@ -41,9 +41,6 @@ class Tree:
                     break
                 tn = tn.father
             else:
-                print('Node :', tu)
-                print('Root : ', r)
-                print('Ancestors : ', anc)
                 return False
         return True
 
@@ -57,8 +54,6 @@ class Tree:
         Return e if e is not added to the tree
         Return the maximum weight edge of the cycle created by the addition of e otherwise
         """
-
-        print('add_edge', e)
 
         u, v = e.extremities
         try:
@@ -80,7 +75,6 @@ class Tree:
         source, remove_edge = self._conflict(e, tu, tv, handle_conflict)
 
         if source is None:
-            print('do not add')
             return e
 
         self.cost += we
@@ -100,13 +94,11 @@ class Tree:
 
     def _union(self, tu, tv):
         tv.evert()
-        print('union', tu, '->', (tu.father, tu.root), tv, '->', tv.root)
         tv.father = tu
 
     def _conflict(self, e, tu, tv, handle_conflict):
         ru = tu.ufd_find()
         rv = tv.ufd_find()
-        print('conflict', tu, '->', ru, tv, '->', rv, handle_conflict)
 
         if ru != rv:
             return tu, None
@@ -117,7 +109,6 @@ class Tree:
         f, tu2, source = self._maximum_weight_ancestor_edge(tu, tv)
         we, wf = self.weights[e], self.weights[f]
         if wf > we:
-            print('remove conflicted edge', f, tu2, '->', tu2.root, tu2.father, '->', tu2.father.root)
             tu2.father = None
             tu2.enroot()
             self.cost -= wf
@@ -189,24 +180,16 @@ class Tree:
                 if not r:
                     break
 
-
-        print('maximum_weight_ancestor_edge paths', tu, lu)
-        print('maximum_weight_ancestor_edge paths', tv, lv)
         for l, source in zip([lu, lv], [tu, tv]):
             for e, tn in l:
                 if e == last_e:
                     break
                 update(e, tn, source)
 
-        print('maximum_weight_ancestor_edge', best)
-
         return best
 
     def remove_edge(self, e):
         """Remove edge e from the tree, assume that the edge is in the tree."""
-
-
-        print('remove edge')
 
         u, v = e.extremities
         tu = self.nodes[u]
@@ -328,13 +311,11 @@ class _TreeNode:
         else:
             self.root = self
 
-    def find(self):
+    def ufd_find(self):
         root = self
-        print('find', self)
 
         visited = set()
         while root != root.root:
-            print('find it', root, '->', root.root)
             if root in visited:
                 import sys
                 sys.exit(-1)
@@ -347,16 +328,13 @@ class _TreeNode:
         return root
 
     def evert(self):
-        print('evert', self)
         c = self
         q = c.father
         self.father = None
         while q is not None:
-            print('evert >', c, '->', (c.father, c.root), q, '->', (q.father, q.root))
             f = q.father
             q.father = c
             c, q = q, f
-        print('evert >', c, '->', c.root, self, '->', self.root)
         self.enroot()
 
     def enroot(self):
