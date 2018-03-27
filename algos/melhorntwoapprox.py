@@ -3,18 +3,26 @@ from dynamicgraphviz.exceptions.graph_errors import NodeError
 
 from helpers.shortest_paths import voronoi, incremental_voronoi, decremental_voronoi
 from helpers.spanning_trees import kruskal
+from steiner.tree import Tree
+from helpers.heap_dict import heapdict
+import parameters
+
+from helpers.sortedcontainers.sortedlist import SortedListWithKey
 
 
 class MelhornTwoApprox:
     def __init__(self, instance):
         dists, paths, closest_sources, limits = voronoi(instance.g, instance.terms, instance.weights)
         self.instance = instance
+
         self.dists = dists
         self.paths = paths
         self.closest_sources = closest_sources
         self.limits = limits
 
         self.gc = UndirectedGraph()
+        self.treec = None
+        self.nontree_edges = SortedListWithKey(key=lambda ec: self.weights[ec])
 
         self.sources = set(self.instance.terms)
 
@@ -42,11 +50,20 @@ class MelhornTwoApprox:
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
 
-    def compute(self):
-        treec = kruskal(self.gc, self.weights)
+        self.treec = kruskal(self.gc, self.weights)
+        edges = set(self.treec)
 
-        tree = set([])
-        for ec in treec:
+        for ec in self.gc.edges:
+            if ec not in edges:
+                self.nontree_edges.add(ec)
+
+    def compute(self):
+        return self.current_tree()
+
+    def current_tree(self):
+
+        tree = Tree(self.instance.g, self.instance.weights)
+        for ec in self.treec:
             vuc, vvc = ec.extremities
             xu = self.nodesback[vuc]
             xv = self.nodesback[vvc]
@@ -60,15 +77,49 @@ class MelhornTwoApprox:
                 pathv = self.paths[xv][u]
 
             for f in pathu:
-                tree.add(f)
+                tree.add_edge(f)
             for f in pathv:
-                tree.add(f)
-            tree.add(e)
+                tree.add_edge(f)
+            tree.add_edge(e)
 
+        tree.simplify(self.instance.terms)
         return tree
 
-    def add_sources(self, new_terms):
+    def current_cost(self):
+        return self.treec.cost
 
+    def _add_edge(self, ec):
+        fc = self.treec.add_edge(ec)
+        if fc is not None:
+            self.nontree_edges.add(fc)
+
+    def _decrease_edge_key(self, ec, wc, pathlink):
+        if ec in self.nontree_edges:
+            self.nontree_edges.remove(ec)
+            self.weights[ec] = wc
+            self.nontree_edges.add(ec)
+        else:
+            self.weights[ec] = wc
+        self.pathslinks[ec] = pathlink
+
+    def _remove_edges(self, rem_edges):
+        for ec in rem_edges:
+            try:
+                self.nontree_edges.remove(ec)
+            except ValueError:
+                self.treec.remove_edge(ec)
+
+        to_remove_from_non_tree = []
+        for ec in self.nontree_edges:
+            remove_edge = self.treec.add_edge(ec, handle_conflict=False)
+            if remove_edge is None:
+                to_remove_from_non_tree.append(ec)
+            if len(self.treec) == len(self.gc) - 1:
+                break
+        for ec in to_remove_from_non_tree:
+            self.nontree_edges.remove(ec)
+
+    def add_sources(self, new_terms):
         incremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, new_terms)
 
@@ -83,15 +134,12 @@ class MelhornTwoApprox:
                self.closest_sources[v] != xu and self.closest_sources[v] != xv:
                 rem_edges.append(ec)
 
-        for ec in rem_edges:
-            self.gc.remove_edge(ec)
-
         self.sources |= set(new_terms)
-
         nodes = {x: self.gc.add_node() for x in new_terms}
         self.nodes.update(nodes)
         self.nodesback.update({v: x for x, v in nodes.items()})
 
+        add_edges = []
         for x in new_terms:
             xc = self.nodes[x]
             limit_nodes = self.limits[x]
@@ -110,43 +158,68 @@ class MelhornTwoApprox:
                         ec = self.gc.add_edge(xc, yc)
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
+                        add_edges.append(ec)
+
+        for ec in add_edges:
+            self._add_edge(ec)
+
+        for ec in rem_edges:
+            self.gc.remove_edge(ec)
+        self._remove_edges(rem_edges)
 
     def rem_sources(self, rem_terms):
-        decremental_voronoi(self.instance.g, self.sources, self.instance.weights,
+
+        neighbor_sources = decremental_voronoi(self.instance.g, self.sources, self.instance.weights,
                             self.dists, self.paths, self.closest_sources, self.limits, rem_terms)
 
         self.sources -= set(rem_terms)
-        neighbors = set()
-
+        rem_nodes = set()
         for x in rem_terms:
             xc = self.nodes.pop(x)
-            neighbors |= set(xc.neighbors)
             del self.nodesback[xc]
-            self.gc.remove_node(xc)
+            rem_nodes.add(xc)
 
-        neighbors -= set(xc for xc in neighbors if xc not in self.gc)
-
-        for xc in neighbors:
-            x = self.nodesback[xc]
+        add_edges = set()
+        decrease_key_edges = {}
+        for x in neighbor_sources:
+            xc = self.nodes[x]
             limit_nodes = self.limits[x]
+            # print(xc, limit_nodes)
             for u, edges in limit_nodes.items():
                 for e in edges:
                     v = e.neighbor(u)
                     y = self.closest_sources[v]
-                    yc = self.nodes[y]
-                    if yc not in neighbors:
+                    if y not in neighbor_sources:
                         continue
+                    yc = self.nodes[y]
 
                     wc = self.dists[x][u] + self.instance.weights[e] + self.dists[y][v]
                     try:
                         ec = xc.get_incident_edge(yc)
                         if self.weights[ec] > wc:
-                            self.weights[ec] = wc
-                            self.pathslinks[ec] = (u, v, e)
+                            if ec not in add_edges:
+                                decrease_key_edges[ec] = (wc, (u, v, e))
+                            else:
+                                self.weights[ec] = wc
+                                self.pathslinks[ec] = (u, v, e)
                     except NodeError:
                         ec = self.gc.add_edge(xc, yc)
                         self.weights[ec] = wc
                         self.pathslinks[ec] = (u, v, e)
+                        add_edges.add(ec)
+
+        for ec, val in decrease_key_edges.items():
+            wc, pathlink = val
+            self._decrease_edge_key(ec, wc, pathlink)
+        for ec in add_edges:
+            self._add_edge(ec)
+        rem_edges = set()
+        for xc in rem_nodes:
+            rem_edges |= set(xc.incident_edges)
+            self.gc.remove_node(xc)
+
+        self._remove_edges(rem_edges)
+
 
 def compute(instance):
     """Return the Melhorn et al 2-approx algorithm"""

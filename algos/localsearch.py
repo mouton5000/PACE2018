@@ -23,9 +23,21 @@ def compute(instance, tree):
     cost = sum(instance.weights[e] for e in tree)
     melhorn.add_sources(key_vertices)
 
+    if parameters.DEBUG:
+        import time
+        starttime = time.time()
+        it = 0
     while True:
-        if parameters.DEBUG and parameters.timer_end():
-            break
+
+        if parameters.DEBUG:
+            it += 1
+            if it % 100 == 0:
+                print(it, it / (time.time() - starttime))
+            if it > 300:
+                return
+
+        # if parameters.DEBUG and parameters.timer_end():
+        #     break
         r = random.random()
 
         if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
@@ -37,12 +49,9 @@ def compute(instance, tree):
             key_vertices.remove(v)
             melhorn.rem_sources([v])
 
-        tree2 = melhorn.compute()
-        cost2 = sum(instance.weights[e] for e in tree2)
-
-        if cost2 < cost:
-            yield tree2
-            cost = cost2
+        if melhorn.current_cost() < cost:
+            yield melhorn.current_tree()
+            cost = melhorn.current_cost()
         else:
             if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
                 del key_vertices[-1]

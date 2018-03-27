@@ -1,23 +1,12 @@
 from collections import defaultdict
+from steiner.tree import Tree
 
 
 def kruskal(g, weights):
     edges = [e for e in g.edges]
     edges.sort(key=lambda x: weights[x])
 
-    comp = {v: [v] for v in g}
-
-    tree = []
-
+    tree = Tree(g, weights)
     for e in edges:
-        u, v = e.extremities
-        if v in comp[u]:
-            continue  # remove cycles
-        tree.append(e)
-        cu = comp[u]
-        cv = comp[v]
-        merged = cu + cv
-        for w in merged:
-            comp[w] = merged
-
+        tree.add_edge(e, handle_conflict=False)
     return tree

@@ -1,6 +1,7 @@
 import random
 from helpers.heap_dict import heapdict
 from collections import defaultdict
+from steiner.tree import Tree
 
 
 def compute(instance):
@@ -10,7 +11,7 @@ def compute(instance):
     #
 
     # The solution to be returned
-    tree = set()
+    tree = Tree(instance.g, instance.weights)
 
     # Associate the couples of nodes (u,v) and (v,u) to the edge {u,v}
     couple_to_edges = {}
@@ -287,8 +288,10 @@ def compute(instance):
         # FLAC is preferentially merged by the current partial solution. In addition, this loop add the arc to the
         # current partial solution.
 
-        tree |= best_tree
+        for e in best_tree:
+            tree.add_edge(e)
         reached |= reached_nodes
         required_vertices -= reached_terminals
 
+    tree.simplify(instance.terms)
     return tree
