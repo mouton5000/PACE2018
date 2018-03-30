@@ -1,6 +1,6 @@
 
 import steiner.input_output as input_output
-from algos import all, twoapprox, flac, melhorntwoapprox, localsearch
+from algos import all, twoapprox, flac, melhorntwoapprox, localsearch, branchAndBound
 import parameters
 import signal
 import sys
@@ -64,8 +64,19 @@ for tree in localsearch.compute(instance, btree):
         btree = tree
         input_output.print_value(btree)
 
-        with open('out.txt', 'w') as f:
-            f.write(input_output.get_output(btree))
+        if not instance.check(btree):
+            print('not check')
+            import sys
+            sys.exit(-1)
+
+if parameters.DEBUG:
+    print(branchAndBound)
+
+for tree in branchAndBound.compute(instance, btree):
+    btreestr = input_output.get_output(tree)
+    if parameters.DEBUG:
+        btree = tree
+        input_output.print_value(btree)
 
         if not instance.check(btree):
             print('not check')

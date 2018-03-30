@@ -26,15 +26,18 @@ def compute(instance, tree):
     if parameters.DEBUG:
         import time
         starttime = time.time()
-        it = 0
+
+    it = 0
     while True:
 
+        it += 1
+
         if parameters.DEBUG:
-            it += 1
             if it % 100 == 0:
                 print(it, it / (time.time() - starttime))
-            if it > 300:
-                return
+
+        if it > parameters.LOCAL_SEARCH_MAX_ITERATION:
+            return
 
         # if parameters.DEBUG and parameters.timer_end():
         #     break
@@ -52,6 +55,7 @@ def compute(instance, tree):
         if melhorn.current_cost() < cost:
             yield melhorn.current_tree()
             cost = melhorn.current_cost()
+            it = 0
         else:
             if len(key_vertices) < len(instance.g) - len(instance.terms) and r < ADD_PROBA:
                 del key_vertices[-1]

@@ -14,6 +14,7 @@ random.seed(SEED)
 _START_TIME = time.time()
 _MAX_TIME = 120
 
-
 def timer_end():
     return time.time() - _START_TIME > _MAX_TIME
+
+LOCAL_SEARCH_MAX_ITERATION = 2000
