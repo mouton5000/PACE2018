@@ -119,6 +119,7 @@ class _Graph:
                 # are removed. If the listener draws the graphs, the False parameter tells it not to immediately update
                 # the drawing, it will be done when the node is removed.
                 self.__remove_link(arc, False)
+            v._destroy()
 
         except ValueError:
             if isinstance(v, _Node):
@@ -192,6 +193,7 @@ class _Graph:
             else:
                 u._remove_incident_edge(l)
                 v._remove_incident_edge(l)
+            l._destroy()
 
         except ValueError:
             if isinstance(l, _Link):
@@ -233,6 +235,9 @@ class _Node:
         self.__index = _Node._index
         _Node._index += 1
 
+    def _destroy(self):
+        self._graph = None
+
     @property
     def index(self):
         """Return the unique index of that node."""
@@ -266,6 +271,11 @@ class _Link:
         self._graph = g
         self._u = u
         self._v = v
+
+    def _destroy(self):
+        self._graph = None
+        self._u = None
+        self._v = None
 
     @property
     def extremities(self):

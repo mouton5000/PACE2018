@@ -108,6 +108,8 @@ class MelhornTwoApprox:
                 self.nontree_edges.remove(ec)
             except ValueError:
                 self.treec.remove_edge(ec)
+            del self.weights[ec]
+            del self.pathslinks[ec]
 
         to_remove_from_non_tree = []
         for ec in self.nontree_edges:
@@ -163,9 +165,9 @@ class MelhornTwoApprox:
         for ec in add_edges:
             self._add_edge(ec)
 
+        self._remove_edges(rem_edges)
         for ec in rem_edges:
             self.gc.remove_edge(ec)
-        self._remove_edges(rem_edges)
 
     def rem_sources(self, rem_terms):
 
@@ -184,7 +186,6 @@ class MelhornTwoApprox:
         for x in neighbor_sources:
             xc = self.nodes[x]
             limit_nodes = self.limits[x]
-            # print(xc, limit_nodes)
             for u, edges in limit_nodes.items():
                 for e in edges:
                     v = e.neighbor(u)
@@ -213,12 +214,10 @@ class MelhornTwoApprox:
             self._decrease_edge_key(ec, wc, pathlink)
         for ec in add_edges:
             self._add_edge(ec)
-        rem_edges = set()
         for xc in rem_nodes:
-            rem_edges |= set(xc.incident_edges)
+            self._remove_edges(set(xc.incident_edges))
             self.gc.remove_node(xc)
 
-        self._remove_edges(rem_edges)
 
 
 def compute(instance):

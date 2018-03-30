@@ -195,12 +195,16 @@ class Tree:
         tu = self.nodes[u]
         tv = self.nodes[v]
 
-        if tu.father == tv:
-            tu.father = None
-            tu.enroot()
+        base, fath = (tu, tv) if tu.father == tv else (tv, tu)
+        base.father = None
+        if base.is_isolated():
+            del self.nodes[base.node]
+            base._destroy()
         else:
-            tv.father = None
-            tv.enroot()
+            base.enroot()
+        if fath.is_isolated():
+            del self.nodes[fath.node]
+            fath._destroy()
 
         self.cost -= self.weights[e]
         self.__size -= 1
@@ -210,7 +214,7 @@ class Tree:
         self._check_key_node(tv)
 
     def _check_leaf(self, tu):
-        if tu.is_leaf():
+        if tu.is_leaf() and not tu.is_isolated():
             self.leaves.add(tu)
         else:
             self.leaves.discard(tu)
@@ -226,7 +230,6 @@ class Tree:
 
         torem = []
         toadd = []
-
         def simplify_leaf(tn):
             torem.append(tn)
             while tn.node not in terms:
@@ -246,6 +249,8 @@ class Tree:
                     tn.root = tv
 
                 del self.nodes[tn.node]
+                tn._destroy()
+
                 self.cost -= self.weights[e]
                 self.__size -= 1
 
@@ -275,6 +280,9 @@ class _TreeNode:
         self.__father_edge = None
         self.children = set()
 
+    def _destroy(self):
+        self.node = None
+
     def __iter__(self):
         tovisit = [self]
         while len(tovisit) > 0:
@@ -284,6 +292,9 @@ class _TreeNode:
 
     def is_leaf(self):
         return len(self.children) == 0 or self.father is None and len(self.children) == 1
+
+    def is_isolated(self):
+        return len(self.children) == 0 and self.father is None
 
     @property
     def father(self):
@@ -352,7 +363,7 @@ class _TreeNode:
         return str(self.node)
 
     def __repr__(self):
-        return str(self.node)
+        return str(self)
 
 
 if __name__ == '__main__':
