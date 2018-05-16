@@ -1,12 +1,12 @@
 
-# PACE 2018 Track 3 : DoubleDoubleU team
+# PACE 2018 Track 3 : DoubleDoubleU team
 
 The [PACE 2018](https://pacechallenge.wordpress.com/pace-2018/) (The Parameterized Algorithms and Computational Experiments Challenge) is about solving 
 the NP-hard graph problem Steiner Tree on undirected edge-weighted graphs.
 
 We participated to track 3 (Heuristic).
 
-## Use the code
+## Use the code
 
 There are two ways to use the code:
 
@@ -25,7 +25,7 @@ cd ..
 
 where instanceXYZ.gr is an input file of PACE2018
 
-## Quick description of the algorithm
+## Quick description of the algorithm
 
 The algorithm is mostly local search. 
 
